@@ -1,0 +1,2 @@
+n# No external dependencies required - using standard library only
+
