@@ -1,2 +1,4 @@
-# No external dependencies required - using standard library only
-
+# CLI - no external dependencies (standard library only)
+# Web interface:
+fastapi>=0.104.0
+uvicorn[standard]>=0.24.0

@@ -1,0 +1,7 @@
+services:
+  poker-web:
+    build: .
+    container_name: poker-web
+    restart: unless-stopped
+    ports:
+      - "8000:8000"

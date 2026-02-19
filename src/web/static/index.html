@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Texas Hold'em Poker</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <div class="app">
+    <header>
+      <h1>♠ Texas Hold'em Poker ♥</h1>
+      <p class="subtitle">vs AI Opponent</p>
+    </header>
+
+    <main>
+      <div class="game-info">
+        <span>Hand <strong id="hand-num">#1</strong></span>
+        <span class="pot">Pot: <strong id="pot">0</strong> chips</span>
+      </div>
+
+      <div class="table">
+        <div class="player-card player-ai">
+          <div class="player-name" id="ai-name">AI</div>
+          <div class="player-chips" id="ai-chips">1000 chips</div>
+          <div class="cards" id="ai-cards"></div>
+        </div>
+
+        <div class="community-area">
+          <div class="community-cards" id="community-cards"></div>
+          <div class="current-bet" id="current-bet"></div>
+        </div>
+
+        <div class="player-card player-human">
+          <div class="player-name" id="human-name">You</div>
+          <div class="player-chips" id="human-chips">1000 chips</div>
+          <div class="cards" id="human-cards"></div>
+        </div>
+      </div>
+
+      <div class="actions" id="actions">
+        <button class="btn btn-fold" data-action="fold">Fold</button>
+        <button class="btn btn-check" data-action="check">Check</button>
+        <button class="btn btn-call" data-action="call">Call</button>
+        <button class="btn btn-raise" data-action="raise">
+          Raise <input type="number" id="raise-amount" min="0" placeholder="amount">
+        </button>
+        <button class="btn btn-allin" data-action="all_in">All-In</button>
+      </div>
+
+      <div class="start-hand" id="start-hand">
+        <button class="btn btn-primary" id="btn-start-hand">Deal New Hand</button>
+      </div>
+
+      <div class="message" id="message"></div>
+      <div class="result" id="result"></div>
+    </main>
+  </div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

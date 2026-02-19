@@ -1,6 +1,6 @@
 # 2-Player Texas Hold'em Poker Game
 
-A command-line Texas Hold'em poker game where you play against an AI opponent.
+A Texas Hold'em poker game where you play against an AI opponent. Play via **command line** or **web browser**.
 
 ## Features
 
@@ -13,9 +13,12 @@ A command-line Texas Hold'em poker game where you play against an AI opponent.
 ## Requirements
 
 - Python 3.9 or higher
-- No external dependencies (uses only Python standard library)
+- **CLI**: No external dependencies (uses only Python standard library)
+- **Web**: FastAPI and Uvicorn (see requirements.txt)
 
 ## How to Run
+
+### Command Line Interface
 
 ```bash
 python src/main.py
@@ -27,6 +30,23 @@ Or on Unix-like systems:
 chmod +x src/main.py
 ./src/main.py
 ```
+
+### Web Interface
+
+1. Install dependencies: `pip install -r requirements.txt`
+2. Start the server: `python src/web_main.py`
+3. Open http://localhost:8000 in your browser
+4. Click "Deal New Hand" to begin
+
+### Docker (e.g. Raspberry Pi)
+
+```bash
+docker compose up -d
+```
+
+Then open http://localhost:8000 (or http://\<host-ip\>:8000 from other devices on your network).
+
+For Raspberry Pi with systemd, see [deploy/README.md](deploy/README.md).
 
 ## Game Rules
 
@@ -64,7 +84,18 @@ Poker/
 │   ├── ai.py             # AI decision logic
 │   ├── game.py           # Game state management
 │   ├── cli.py            # Command-line interface
-│   └── main.py           # Entry point
+│   ├── main.py           # CLI entry point
+│   ├── web_main.py       # Web server entry point
+│   ├── web/
+│   │   ├── app.py        # FastAPI routes
+│   │   ├── serializers.py
+│   │   ├── game_session.py
+│   │   └── static/       # HTML, CSS, JS
+├── deploy/
+│   ├── poker-web.service # systemd unit for Raspberry Pi
+│   └── README.md         # Deployment instructions
+├── Dockerfile
+├── docker-compose.yml
 ├── requirements.txt
 └── README.md
 ```
