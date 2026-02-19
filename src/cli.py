@@ -322,13 +322,17 @@ class CLI:
                         if current_bet > 0
                         else self.game.big_blind * 2
                     )
+                    other_stack = self.game.human_player.chips
+                    other_contrib = br.player_contributions[0]
 
                     action, amount = self.ai_logic.get_action(
                         amount_to_call,
                         current_bet,
                         min_raise,
                         self.game.community_cards,
-                        self.game.current_betting_round.pot
+                        self.game.current_betting_round.pot,
+                        other_player_stack=other_stack,
+                        other_player_contribution=other_contrib,
                     )
 
                     success, message = self.game.process_betting_action(

@@ -87,6 +87,8 @@ def _run_ai_turns(session) -> None:
         min_raise = (
             current_bet * 2 if current_bet > 0 else game.big_blind * 2
         )
+        other_stack = game.human_player.chips
+        other_contrib = br.player_contributions[0]
 
         action, amount = ai_logic.get_action(
             amount_to_call,
@@ -94,6 +96,8 @@ def _run_ai_turns(session) -> None:
             min_raise,
             game.community_cards,
             br.pot,
+            other_player_stack=other_stack,
+            other_player_contribution=other_contrib,
         )
 
         success, _ = game.process_betting_action(1, action, amount)
