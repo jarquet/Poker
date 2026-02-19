@@ -161,9 +161,21 @@ class CLI:
 
         if winner_info["reason"] == "Showdown":
             hp = self.game.human_player
-            print(f"\n{hp.name}: {winner_info['human_hand']}")
-            print(f"{self.game.ai_player.name}: {winner_info['ai_hand']}")
+            ap = self.game.ai_player
+            human_display = f"{winner_info['human_hand']}"
+            if winner_info.get('human_cards'):
+                human_display += f" ({winner_info['human_cards']})"
+            ai_display = f"{winner_info['ai_hand']}"
+            if winner_info.get('ai_cards'):
+                ai_display += f" ({winner_info['ai_cards']})"
+            print(f"\n{hp.name}: {human_display}")
+            print(f"{ap.name}: {ai_display}")
             print(f"\nWinner: {winner_info['winner']}")
+        elif (winner_info["winner"] == self.game.ai_player.name
+              and winner_info.get('ai_hand')):
+            print(f"\n{winner_info['reason']}")
+            print(f"Winner: {winner_info['winner']}")
+            print(f"AI had: {winner_info['ai_hand']}")
         else:
             print(f"\n{winner_info['reason']}")
             print(f"Winner: {winner_info['winner']}")

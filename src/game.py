@@ -301,14 +301,19 @@ class Game:
             return None
 
         if self.human_player.folded:
+            ai_cards = ' '.join(str(c) for c in self.ai_player.hole_cards)
             return {
                 "winner": self.ai_player.name,
-                "reason": "Player folded"
+                "reason": "Player folded",
+                "ai_hand": ai_cards,
+                "human_hand": None
             }
         if self.ai_player.folded:
             return {
                 "winner": self.human_player.name,
-                "reason": "AI folded"
+                "reason": "AI folded",
+                "ai_hand": None,
+                "human_hand": None
             }
 
         # Showdown
@@ -320,26 +325,37 @@ class Game:
 
         result = HandEvaluator.compare_hands(human_hand, ai_hand)
 
+        human_cards = ' '.join(str(c) for c in self.human_player.hole_cards)
+        ai_cards = ' '.join(str(c) for c in self.ai_player.hole_cards)
+        human_hand_name = HandEvaluator.get_hand_name(human_rank)
+        ai_hand_name = HandEvaluator.get_hand_name(ai_rank)
+
         if result > 0:
             return {
                 "winner": self.human_player.name,
                 "reason": "Showdown",
-                "human_hand": HandEvaluator.get_hand_name(human_rank),
-                "ai_hand": HandEvaluator.get_hand_name(ai_rank)
+                "human_hand": human_hand_name,
+                "ai_hand": ai_hand_name,
+                "human_cards": human_cards,
+                "ai_cards": ai_cards
             }
         elif result < 0:
             return {
                 "winner": self.ai_player.name,
                 "reason": "Showdown",
-                "human_hand": HandEvaluator.get_hand_name(human_rank),
-                "ai_hand": HandEvaluator.get_hand_name(ai_rank)
+                "human_hand": human_hand_name,
+                "ai_hand": ai_hand_name,
+                "human_cards": human_cards,
+                "ai_cards": ai_cards
             }
         else:
             return {
                 "winner": "Tie",
                 "reason": "Showdown - Split pot",
-                "human_hand": HandEvaluator.get_hand_name(human_rank),
-                "ai_hand": HandEvaluator.get_hand_name(ai_rank)
+                "human_hand": human_hand_name,
+                "ai_hand": ai_hand_name,
+                "human_cards": human_cards,
+                "ai_cards": ai_cards
             }
 
     def is_game_over(self) -> bool:
