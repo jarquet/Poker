@@ -5,14 +5,14 @@ A command-line Texas Hold'em poker game where you play against an AI opponent.
 ## Features
 
 - Full Texas Hold'em gameplay with all betting rounds (pre-flop, flop, turn, river)
-- AI opponent with configurable difficulty
+- AI opponent (medium difficulty)
 - Betting system with fold, check, call, raise, and all-in actions
 - Hand evaluation and showdown logic
 - Chip management and pot tracking
 
 ## Requirements
 
-- Python 3.7 or higher
+- Python 3.9 or higher
 - No external dependencies (uses only Python standard library)
 
 ## How to Run
