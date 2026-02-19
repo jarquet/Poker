@@ -56,7 +56,9 @@ class Game:
         
         # Start pre-flop betting
         self.state = GameState.PRE_FLOP
-        self.current_betting_round = BettingRound(self.small_blind, self.big_blind)
+        self.current_betting_round = BettingRound(
+            self.small_blind, self.big_blind
+        )
         
         # Post blinds
         stacks = [p.chips for p in self.players]
@@ -76,8 +78,12 @@ class Game:
         self.state = GameState.FLOP
         
         # Carry over pot and player states to new betting round
-        previous_pot = self.current_betting_round.pot if self.current_betting_round else 0
-        self.current_betting_round = BettingRound(self.small_blind, self.big_blind)
+        previous_pot = (
+            self.current_betting_round.pot if self.current_betting_round else 0
+        )
+        self.current_betting_round = BettingRound(
+            self.small_blind, self.big_blind
+        )
         self.current_betting_round.pot = previous_pot
         # Sync player states
         self.current_betting_round.folded = [p.folded for p in self.players]
@@ -95,8 +101,12 @@ class Game:
         self.state = GameState.TURN
         
         # Carry over pot and player states to new betting round
-        previous_pot = self.current_betting_round.pot if self.current_betting_round else 0
-        self.current_betting_round = BettingRound(self.small_blind, self.big_blind)
+        previous_pot = (
+            self.current_betting_round.pot if self.current_betting_round else 0
+        )
+        self.current_betting_round = BettingRound(
+            self.small_blind, self.big_blind
+        )
         self.current_betting_round.pot = previous_pot
         # Sync player states
         self.current_betting_round.folded = [p.folded for p in self.players]
@@ -114,15 +124,21 @@ class Game:
         self.state = GameState.RIVER
         
         # Carry over pot and player states to new betting round
-        previous_pot = self.current_betting_round.pot if self.current_betting_round else 0
-        self.current_betting_round = BettingRound(self.small_blind, self.big_blind)
+        previous_pot = (
+            self.current_betting_round.pot if self.current_betting_round else 0
+        )
+        self.current_betting_round = BettingRound(
+            self.small_blind, self.big_blind
+        )
         self.current_betting_round.pot = previous_pot
         # Sync player states
         self.current_betting_round.folded = [p.folded for p in self.players]
         self.current_betting_round.all_in = [p.all_in for p in self.players]
 
-    def process_betting_action(self, player_index: int, action: BettingAction, 
-                              amount: Optional[int] = None) -> Tuple[bool, str]:
+    def process_betting_action(
+        self, player_index: int, action: BettingAction,
+        amount: Optional[int] = None
+    ) -> Tuple[bool, str]:
         """
         Process a betting action.
         Returns: (success, message)
@@ -140,7 +156,7 @@ class Game:
         )
         
         if success:
-            # Update player's chips with the new stack value returned from make_action
+            # Update player's chips with new stack value from make_action
             self.players[player_index].chips = new_stack
             
             # Update player state - sync with betting round state
@@ -236,7 +252,10 @@ class Game:
         self.state = GameState.GAME_OVER
         
         # Get the pot amount before distribution
-        pot_amount = self.current_betting_round.pot if self.current_betting_round else 0
+        pot_amount = (
+            self.current_betting_round.pot
+            if self.current_betting_round else 0
+        )
         
         # If someone folded, they lose
         if self.human_player.folded:
