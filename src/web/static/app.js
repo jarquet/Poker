@@ -69,19 +69,30 @@ function updateUI(state) {
 
   if (state.game_state === 'game_over') {
     actionsEl.classList.add('hidden');
-    startHandEl.classList.remove('hidden');
 
-    if (state.winner_info) {
+    if (state.game_over) {
+      startHandEl.classList.add('hidden');
       resultEl.classList.remove('hidden');
-      const wi = state.winner_info;
-      let msg = `${wi.winner} wins!`;
-      if (wi.reason === 'Showdown' && wi.human_hand && wi.ai_hand) {
-        msg += ` (${wi.human_hand} vs ${wi.ai_hand})`;
-      } else if (wi.reason) {
-        msg += ` - ${wi.reason}`;
-      }
-      resultEl.textContent = msg;
+      const hp = state.human_player.chips;
+      const ap = state.ai_player.chips;
+      const winner =
+        hp > ap ? state.human_player.name : state.ai_player.name;
+      resultEl.textContent = `GAME OVER! ${winner} wins the match!`;
       resultEl.classList.add('winner');
+    } else {
+      startHandEl.classList.remove('hidden');
+      if (state.winner_info) {
+        resultEl.classList.remove('hidden');
+        const wi = state.winner_info;
+        let msg = `${wi.winner} wins!`;
+        if (wi.reason === 'Showdown' && wi.human_hand && wi.ai_hand) {
+          msg += ` (${wi.human_hand} vs ${wi.ai_hand})`;
+        } else if (wi.reason) {
+          msg += ` - ${wi.reason}`;
+        }
+        resultEl.textContent = msg;
+        resultEl.classList.add('winner');
+      }
     }
   } else {
     startHandEl.classList.add('hidden');
@@ -114,15 +125,6 @@ function updateUI(state) {
     }
   }
 
-  if (state.game_over && state.winner_info) {
-    const hp = state.human_player.chips;
-    const ap = state.ai_player.chips;
-    if (hp <= 0 || ap <= 0) {
-      const winner =
-        hp > ap ? state.human_player.name : state.ai_player.name;
-      resultEl.textContent = `GAME OVER! ${winner} wins the match!`;
-    }
-  }
 }
 
 function showMessage(msg) {

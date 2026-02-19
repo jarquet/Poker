@@ -1,8 +1,28 @@
 import os
+import sys
 from typing import Optional
 from game import Game, GameState
 from betting import BettingAction
 from ai import AIPlayer as AILogic
+
+# ASCII suit chars for consoles that can't display Unicode (e.g. Windows cp1252)
+_SUIT_ASCII = {'♥': 'h', '♦': 'd', '♣': 'c', '♠': 's'}
+
+
+def _safe_display(s: str) -> str:
+    """Convert string to ASCII-safe for Windows/non-UTF-8 consoles."""
+    enc_raw = getattr(sys.stdout, 'encoding', None) or ''
+    enc = enc_raw.lower() if isinstance(enc_raw, str) else ''
+    if enc in ('utf-8', 'utf8'):
+        return s
+    for uni, asc in _SUIT_ASCII.items():
+        s = s.replace(uni, asc)
+    return s
+
+
+def _cards_for_display(cards) -> str:
+    """Return cards as string, ASCII-safe for Windows/non-UTF-8 consoles."""
+    return _safe_display(' '.join(str(c) for c in cards))
 
 
 class CLI:
@@ -34,14 +54,12 @@ class CLI:
 
         # Display community cards
         if self.game.community_cards:
-            cards = ' '.join(str(c) for c in self.game.community_cards)
-            print(f"\nCommunity Cards: {cards}")
+            print(f"\nCommunity Cards: {_cards_for_display(self.game.community_cards)}")
         else:
             print("\nCommunity Cards: (none yet)")
 
         # Display player's hole cards
-        cards = ' '.join(str(c) for c in self.game.human_player.hole_cards)
-        print(f"\nYour Cards: {cards}")
+        print(f"\nYour Cards: {_cards_for_display(self.game.human_player.hole_cards)}")
 
         # Display current betting round info
         if self.game.current_betting_round:
@@ -162,20 +180,20 @@ class CLI:
         if winner_info["reason"] == "Showdown":
             hp = self.game.human_player
             ap = self.game.ai_player
-            human_display = f"{winner_info['human_hand']}"
+            human_display = winner_info['human_hand']
             if winner_info.get('human_cards'):
-                human_display += f" ({winner_info['human_cards']})"
-            ai_display = f"{winner_info['ai_hand']}"
+                human_display += f" ({_safe_display(winner_info['human_cards'])})"
+            ai_display = winner_info['ai_hand']
             if winner_info.get('ai_cards'):
-                ai_display += f" ({winner_info['ai_cards']})"
-            print(f"\n{hp.name}: {human_display}")
-            print(f"{ap.name}: {ai_display}")
+                ai_display += f" ({_safe_display(winner_info['ai_cards'])})"
+            print(f"\n{hp.name}: {_safe_display(human_display)}")
+            print(f"{ap.name}: {_safe_display(ai_display)}")
             print(f"\nWinner: {winner_info['winner']}")
         elif (winner_info["winner"] == self.game.ai_player.name
               and winner_info.get('ai_hand')):
             print(f"\n{winner_info['reason']}")
             print(f"Winner: {winner_info['winner']}")
-            print(f"AI had: {winner_info['ai_hand']}")
+            print(f"AI had: {_safe_display(winner_info['ai_hand'])}")
         else:
             print(f"\n{winner_info['reason']}")
             print(f"Winner: {winner_info['winner']}")

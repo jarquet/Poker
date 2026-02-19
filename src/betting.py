@@ -132,20 +132,10 @@ class BettingRound:
                 other_index = 1 - player_index
                 other_contribution = self.player_contributions[other_index]
                 max_other_can_match = other_player_stack + other_contribution
-                # Bet must not exceed what other player can match
                 if amount > max_other_can_match:
-                    max_bet = max_other_can_match
-                    msg = f"Cannot raise to {max_bet} (other player limit)"
+                    msg = f"Cannot raise to {max_other_can_match} (other player limit)"
                     return False, msg, player_stack
-
-            # Ensure current_bet doesn't exceed minimum stack
-            if other_player_stack is not None:
-                other_index = 1 - player_index
-                other_contribution = self.player_contributions[other_index]
-                max_other_can_match = other_player_stack + other_contribution
-                # Cap the bet at what the other player can match
                 amount = min(amount, max_other_can_match)
-                # Recalculate total_needed with capped amount
                 total_needed = amount - self.player_contributions[player_index]
 
             # Make the raise

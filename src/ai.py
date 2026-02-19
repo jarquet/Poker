@@ -129,6 +129,17 @@ class AIPlayer:
             return 0.0
         return pot_size / amount_to_call
 
+    def _safe_raise_amount(
+        self, computed: int, min_raise: int,
+        current_bet: int, amount_to_call: int
+    ) -> Optional[int]:
+        """Return a valid raise amount (total bet), or None if cannot raise."""
+        contribution = current_bet - amount_to_call
+        max_total = self.player.chips + contribution
+        if min_raise > max_total:
+            return None
+        return max(min_raise, min(computed, max_total))
+
     def _easy_strategy(
         self, hand_strength: float, amount_to_call: int,
         current_bet: int, min_raise: int
@@ -147,16 +158,20 @@ class AIPlayer:
         else:
             if amount_to_call == 0:
                 if hand_strength > 0.7 and random.random() < 0.3:
-                    raise_amount = min(
-                        min_raise, int(self.player.chips * 0.2)
+                    raise_amount = self._safe_raise_amount(
+                        min(min_raise, int(self.player.chips * 0.2)),
+                        min_raise, current_bet, amount_to_call
                     )
-                    return BettingAction.RAISE, raise_amount
+                    if raise_amount is not None:
+                        return BettingAction.RAISE, raise_amount
                 return BettingAction.CHECK, None
             if hand_strength > 0.8 and random.random() < 0.4:
-                raise_amount = min(
-                    min_raise * 2, int(self.player.chips * 0.3)
+                raise_amount = self._safe_raise_amount(
+                    min(min_raise * 2, int(self.player.chips * 0.3)),
+                    min_raise, current_bet, amount_to_call
                 )
-                return BettingAction.RAISE, raise_amount
+                if raise_amount is not None:
+                    return BettingAction.RAISE, raise_amount
             return BettingAction.CALL, None
 
     def _medium_strategy(
@@ -174,10 +189,12 @@ class AIPlayer:
         elif hand_strength < 0.5:
             if amount_to_call == 0:
                 if random.random() < 0.2:  # Occasional bluff
-                    raise_amount = min(
-                        min_raise, int(self.player.chips * 0.15)
+                    raise_amount = self._safe_raise_amount(
+                        min(min_raise, int(self.player.chips * 0.15)),
+                        min_raise, current_bet, amount_to_call
                     )
-                    return BettingAction.RAISE, raise_amount
+                    if raise_amount is not None:
+                        return BettingAction.RAISE, raise_amount
                 return BettingAction.CHECK, None
             if pot_odds > 4:
                 return BettingAction.CALL, None
@@ -187,36 +204,44 @@ class AIPlayer:
         elif hand_strength < 0.7:
             if amount_to_call == 0:
                 if random.random() < 0.4:
-                    raise_amount = min(
-                        min_raise, int(self.player.chips * 0.25)
+                    raise_amount = self._safe_raise_amount(
+                        min(min_raise, int(self.player.chips * 0.25)),
+                        min_raise, current_bet, amount_to_call
                     )
-                    return BettingAction.RAISE, raise_amount
+                    if raise_amount is not None:
+                        return BettingAction.RAISE, raise_amount
                 return BettingAction.CHECK, None
             if hand_strength > 0.6 and random.random() < 0.3:
-                raise_amount = min(
-                    min_raise * 2, int(self.player.chips * 0.3)
+                raise_amount = self._safe_raise_amount(
+                    min(min_raise * 2, int(self.player.chips * 0.3)),
+                    min_raise, current_bet, amount_to_call
                 )
-                return BettingAction.RAISE, raise_amount
+                if raise_amount is not None:
+                    return BettingAction.RAISE, raise_amount
             return BettingAction.CALL, None
         else:  # Strong hand
             if amount_to_call == 0:
                 if random.random() < 0.6:
-                    raise_amount = min(
-                        min_raise * 2, int(self.player.chips * 0.4)
+                    raise_amount = self._safe_raise_amount(
+                        min(min_raise * 2, int(self.player.chips * 0.4)),
+                        min_raise, current_bet, amount_to_call
                     )
-                    return BettingAction.RAISE, raise_amount
+                    if raise_amount is not None:
+                        return BettingAction.RAISE, raise_amount
                 return BettingAction.CHECK, None
             if random.random() < 0.5:
-                raise_amount = min(
-                    min_raise * 2, int(self.player.chips * 0.5)
+                raise_amount = self._safe_raise_amount(
+                    min(min_raise * 2, int(self.player.chips * 0.5)),
+                    min_raise, current_bet, amount_to_call
                 )
-                return BettingAction.RAISE, raise_amount
+                if raise_amount is not None:
+                    return BettingAction.RAISE, raise_amount
             return BettingAction.CALL, None
 
     def _hard_strategy(
         self, hand_strength: float, amount_to_call: int,
         pot_odds: float, current_bet: int, min_raise: int,
-        pot_size: int
+        _pot_size: int  # Reserved for future implied-odds logic
     ) -> tuple[BettingAction, Optional[int]]:
         """Hard AI strategy - more aggressive and strategic"""
         # More sophisticated pot odds and implied odds consideration
@@ -226,10 +251,12 @@ class AIPlayer:
             if amount_to_call == 0:
                 # Bluff occasionally
                 if random.random() < 0.15:
-                    raise_amount = min(
-                        min_raise, int(self.player.chips * 0.2)
+                    raise_amount = self._safe_raise_amount(
+                        min(min_raise, int(self.player.chips * 0.2)),
+                        min_raise, current_bet, amount_to_call
                     )
-                    return BettingAction.RAISE, raise_amount
+                    if raise_amount is not None:
+                        return BettingAction.RAISE, raise_amount
                 return BettingAction.CHECK, None
             if effective_odds < 2 or amount_to_call > self.player.chips * 0.2:
                 return BettingAction.FOLD, None
@@ -237,10 +264,12 @@ class AIPlayer:
         elif hand_strength < 0.5:
             if amount_to_call == 0:
                 if random.random() < 0.3:
-                    raise_amount = min(
-                        min_raise, int(self.player.chips * 0.2)
+                    raise_amount = self._safe_raise_amount(
+                        min(min_raise, int(self.player.chips * 0.2)),
+                        min_raise, current_bet, amount_to_call
                     )
-                    return BettingAction.RAISE, raise_amount
+                    if raise_amount is not None:
+                        return BettingAction.RAISE, raise_amount
                 return BettingAction.CHECK, None
             if effective_odds > 3:
                 return BettingAction.CALL, None
@@ -250,28 +279,36 @@ class AIPlayer:
         elif hand_strength < 0.7:
             if amount_to_call == 0:
                 if random.random() < 0.5:
-                    raise_amount = min(
-                        min_raise * 2, int(self.player.chips * 0.3)
+                    raise_amount = self._safe_raise_amount(
+                        min(min_raise * 2, int(self.player.chips * 0.3)),
+                        min_raise, current_bet, amount_to_call
                     )
-                    return BettingAction.RAISE, raise_amount
+                    if raise_amount is not None:
+                        return BettingAction.RAISE, raise_amount
                 return BettingAction.CHECK, None
             if hand_strength > 0.6 and random.random() < 0.4:
-                raise_amount = min(
-                    min_raise * 2, int(self.player.chips * 0.35)
+                raise_amount = self._safe_raise_amount(
+                    min(min_raise * 2, int(self.player.chips * 0.35)),
+                    min_raise, current_bet, amount_to_call
                 )
-                return BettingAction.RAISE, raise_amount
+                if raise_amount is not None:
+                    return BettingAction.RAISE, raise_amount
             return BettingAction.CALL, None
         else:  # Very strong hand
             if amount_to_call == 0:
                 if random.random() < 0.7:
-                    raise_amount = min(
-                        min_raise * 2, int(self.player.chips * 0.5)
+                    raise_amount = self._safe_raise_amount(
+                        min(min_raise * 2, int(self.player.chips * 0.5)),
+                        min_raise, current_bet, amount_to_call
                     )
-                    return BettingAction.RAISE, raise_amount
+                    if raise_amount is not None:
+                        return BettingAction.RAISE, raise_amount
                 return BettingAction.CHECK, None
             if random.random() < 0.6:
-                raise_amount = min(
-                    min_raise * 3, int(self.player.chips * 0.6)
+                raise_amount = self._safe_raise_amount(
+                    min(min_raise * 3, int(self.player.chips * 0.6)),
+                    min_raise, current_bet, amount_to_call
                 )
-                return BettingAction.RAISE, raise_amount
+                if raise_amount is not None:
+                    return BettingAction.RAISE, raise_amount
             return BettingAction.CALL, None

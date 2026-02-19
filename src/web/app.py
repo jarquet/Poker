@@ -126,8 +126,10 @@ async def root():
 
 @app.get("/api/state")
 async def get_state(x_session_id: Optional[str] = Header(None, alias="X-Session-Id")):
-    """Get current game state. Creates new session if none exists."""
+    """Get current game state. Creates new session if none exists.
+    If it's the AI's turn (e.g. after page refresh), runs AI turns before returning."""
     session_id, session = get_or_create_session(x_session_id)
+    _run_ai_turns(session)
     state = serialize_game_state(session.game)
     state["session_id"] = session_id
     return state
