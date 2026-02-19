@@ -16,13 +16,13 @@ class BettingRound:
         self.big_blind = big_blind
         self.pot = 0
         self.current_bet = 0  # Start at 0, will be set by blinds or first bet
-        self.player_bets: List[int] = [0, 0]  # Track bets for each player this round
-        self.player_contributions: List[int] = [0, 0]  # Total contributions this round
+        self.player_bets: List[int] = [0, 0]  # Bets each player this round
+        self.player_contributions: List[int] = [0, 0]  # Total per player
         self.folded: List[bool] = [False, False]
         self.all_in: List[bool] = [False, False]
         self.round_complete = False
         self.last_to_act: Optional[int] = None  # Track who last raised
-        self.players_acted: List[bool] = [False, False]  # Track if each player has acted this round
+        self.players_acted: List[bool] = [False, False]  # Who has acted
 
     def post_blinds(self, player_stacks: List[int], dealer_index: int):
         """Post small and big blinds"""
@@ -30,11 +30,11 @@ class BettingRound:
         big_blind_index = (dealer_index + 2) % 2
 
         # Post small blind
-        small_blind_amount = min(self.small_blind, player_stacks[small_blind_index])
-        self.player_bets[small_blind_index] = small_blind_amount
-        self.player_contributions[small_blind_index] = small_blind_amount
-        player_stacks[small_blind_index] -= small_blind_amount
-        self.pot += small_blind_amount
+        sb_amt = min(self.small_blind, player_stacks[small_blind_index])
+        self.player_bets[small_blind_index] = sb_amt
+        self.player_contributions[small_blind_index] = sb_amt
+        player_stacks[small_blind_index] -= sb_amt
+        self.pot += sb_amt
 
         # Post big blind
         big_blind_amount = min(self.big_blind, player_stacks[big_blind_index])
@@ -49,9 +49,11 @@ class BettingRound:
         if player_stacks[big_blind_index] == 0:
             self.all_in[big_blind_index] = True
 
-    def make_action(self, player_index: int, action: BettingAction, 
-                   amount: Optional[int], player_stack: int,
-                   other_player_stack: Optional[int] = None) -> Tuple[bool, str, int]:
+    def make_action(
+        self, player_index: int, action: BettingAction,
+        amount: Optional[int], player_stack: int,
+        other_player_stack: Optional[int] = None
+    ) -> Tuple[bool, str, int]:
         """
         Make a betting action.
         Returns: (success, message, new_stack)
@@ -67,7 +69,9 @@ class BettingRound:
             return False, "Player is already all-in", player_stack
 
         # Calculate amount needed to call
-        amount_to_call = self.current_bet - self.player_contributions[player_index]
+        amount_to_call = (
+            self.current_bet - self.player_contributions[player_index]
+        )
 
         if action == BettingAction.FOLD:
             self.folded[player_index] = True
@@ -86,8 +90,8 @@ class BettingRound:
 
         elif action == BettingAction.CALL:
             if amount_to_call == 0:
-                return False, "Nothing to call - can check instead", player_stack
-            
+                return False, "Nothing to call - can check", player_stack
+
             call_amount = min(amount_to_call, player_stack)
             self.player_contributions[player_index] += call_amount
             new_stack = player_stack - call_amount
@@ -97,7 +101,7 @@ class BettingRound:
             if new_stack == 0:
                 self.all_in[player_index] = True
 
-            # If this player called and matched the bet, check if round is complete
+            # If player called and matched bet, check if round complete
             if self.player_contributions[player_index] == self.current_bet:
                 if self._is_round_complete():
                     self.round_complete = True
@@ -106,28 +110,33 @@ class BettingRound:
         elif action == BettingAction.RAISE:
             if amount is None:
                 return False, "Raise amount required", player_stack
-            
-            min_raise = self.current_bet * 2 if self.current_bet > 0 else self.big_blind * 2
+
+            min_raise = (
+                self.current_bet * 2 if self.current_bet > 0
+                else self.big_blind * 2
+            )
             if amount < min_raise:
-                return False, f"Raise must be at least {min_raise} (double the current bet)", player_stack
-            
+                msg = f"Raise must be at least {min_raise} (double the bet)"
+                return False, msg, player_stack
+
             if amount > player_stack + self.player_contributions[player_index]:
-                return False, "Cannot raise more than available chips", player_stack
+                return False, "Cannot raise more than chips", player_stack
 
             # Calculate total needed (call + raise)
             total_needed = amount - self.player_contributions[player_index]
             if total_needed > player_stack:
                 return False, "Insufficient chips for this raise", player_stack
-            
+
             # Ensure the bet doesn't exceed what the other player can match
             if other_player_stack is not None:
                 other_index = 1 - player_index
                 other_contribution = self.player_contributions[other_index]
                 max_other_can_match = other_player_stack + other_contribution
-                # The bet amount should not exceed what the other player can match
+                # Bet must not exceed what other player can match
                 if amount > max_other_can_match:
                     max_bet = max_other_can_match
-                    return False, f"Cannot raise to more than {max_bet} (other player's stack limit)", player_stack
+                    msg = f"Cannot raise to {max_bet} (other player limit)"
+                    return False, msg, player_stack
 
             # Ensure current_bet doesn't exceed minimum stack
             if other_player_stack is not None:
@@ -138,7 +147,7 @@ class BettingRound:
                 amount = min(amount, max_other_can_match)
                 # Recalculate total_needed with capped amount
                 total_needed = amount - self.player_contributions[player_index]
-            
+
             # Make the raise
             self.player_contributions[player_index] = amount
             new_stack = player_stack - total_needed
@@ -150,11 +159,11 @@ class BettingRound:
             if new_stack == 0:
                 self.all_in[player_index] = True
 
-            # Reset the other player's action status (they need to act again)
+            # Reset other player's action (they need to act again)
             other_index = 1 - player_index
             if not self.folded[other_index] and not self.all_in[other_index]:
                 self.round_complete = False
-                self.players_acted[other_index] = False  # They need to act again
+                self.players_acted[other_index] = False
 
             return True, f"Raised to {amount}", new_stack
 
@@ -163,23 +172,27 @@ class BettingRound:
             if all_in_amount == 0:
                 return False, "No chips to go all-in with", player_stack
 
-            # Calculate the effective all-in amount: min of player's chips and opponent's chips
+            # Effective all-in: min of player's and opponent's chips
             effective_all_in = all_in_amount
             if other_player_stack is not None:
                 other_index = 1 - player_index
                 other_contribution = self.player_contributions[other_index]
-                # The effective all-in is the minimum of:
-                # - Player's remaining chips
-                # - Opponent's remaining chips + what they've already contributed
+                # Effective all-in is min of:
+                # - Player chips, - Opponent chips + their contribution
                 max_opponent_total = other_player_stack + other_contribution
-                player_total_if_all_in = self.player_contributions[player_index] + all_in_amount
-                # Effective bet is the minimum of both players' total possible contributions
-                effective_total = min(player_total_if_all_in, max_opponent_total)
-                # Calculate how much the player actually needs to bet
-                effective_all_in = effective_total - self.player_contributions[player_index]
-            
+                player_total = (
+                    self.player_contributions[player_index] + all_in_amount
+                )
+                # Effective bet is min of both players' total contributions
+                effective_total = min(player_total, max_opponent_total)
+                effective_all_in = (
+                    effective_total - self.player_contributions[player_index]
+                )
+
             # Player goes all-in (bets the effective amount)
-            total_contribution = self.player_contributions[player_index] + effective_all_in
+            total_contribution = (
+                self.player_contributions[player_index] + effective_all_in
+            )
             self.player_contributions[player_index] = total_contribution
             self.pot += effective_all_in
             new_stack = player_stack - effective_all_in
@@ -194,9 +207,13 @@ class BettingRound:
                 self.last_to_act = player_index
                 # Other player needs to act
                 other_index = 1 - player_index
-                if not self.folded[other_index] and not self.all_in[other_index]:
+                other_can_act = (
+                    not self.folded[other_index]
+                    and not self.all_in[other_index]
+                )
+                if other_can_act:
                     self.round_complete = False
-                    self.players_acted[other_index] = False  # They need to act again
+                    self.players_acted[other_index] = False
             else:
                 # All-in but didn't raise, check if round is complete
                 if self._is_round_complete():
@@ -217,15 +234,16 @@ class BettingRound:
         if all(self.all_in):
             return True
 
-        # If one player is all-in, round is complete when the other player has acted
+        # If one all-in, round complete when other has acted
         # and matched the all-in bet (or checked if no bet to call)
         if any(self.all_in):
             all_in_index = 0 if self.all_in[0] else 1
             other_index = 1 - all_in_index
-            # If the other player has acted and matched the bet, round is complete
+            # Other player acted and matched - round complete
             if self.players_acted[other_index]:
                 # Check if contributions match or if other player checked
-                if (self.player_contributions[0] == self.player_contributions[1] or
+                if (self.player_contributions[0] ==
+                        self.player_contributions[1] or
                     (self.current_bet == 0 and
                      self.player_contributions[other_index] ==
                      self.player_contributions[all_in_index])):
@@ -238,9 +256,9 @@ class BettingRound:
             if self.last_to_act is not None:
                 # Both have matched the raise, round is complete
                 return True
-            # If both have acted and contributions match (both checked or both called)
+            # If both acted and contributions match
             # For checking: current_bet must be 0 and both have acted
-            # For calling: current_bet must equal contributions and both have acted
+            # For calling: current_bet equals contributions, both acted
             if all(self.players_acted):
                 if self.current_bet == 0:
                     # Both checked - round is complete
@@ -253,10 +271,11 @@ class BettingRound:
 
     def get_amount_to_call(self, player_index: int) -> int:
         """Get the amount a player needs to call"""
-        return max(0, self.current_bet - self.player_contributions[player_index])
+        contrib = self.player_contributions[player_index]
+        return max(0, self.current_bet - contrib)
 
     def reset_for_new_round(self):
-        """Reset for a new betting round (called when starting flop/turn/river)"""
+        """Reset for new betting round (flop/turn/river)"""
         self.current_bet = 0
         self.player_bets = [0, 0]
         self.player_contributions = [0, 0]
@@ -264,4 +283,3 @@ class BettingRound:
         self.last_to_act = None
         self.players_acted = [False, False]  # Reset action tracking
         # Note: folded and all_in states persist across rounds
-

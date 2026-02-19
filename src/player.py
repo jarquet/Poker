@@ -37,8 +37,10 @@ class HumanPlayer(Player):
     def __init__(self, name: str, chips: int):
         super().__init__(name, chips)
 
-    def get_action(self, amount_to_call: int, current_bet: int, 
-                  min_raise: int, community_cards: List[Card]) -> tuple[BettingAction, Optional[int]]:
+    def get_action(
+        self, amount_to_call: int, current_bet: int,
+        min_raise: int, community_cards: List[Card]
+    ) -> tuple[BettingAction, Optional[int]]:
         """
         Get action from human player via CLI.
         This will be handled by the CLI interface, so this is a placeholder.
@@ -52,13 +54,14 @@ class AIPlayer(Player):
     def __init__(self, name: str, chips: int):
         super().__init__(name, chips)
 
-    def get_action(self, amount_to_call: int, current_bet: int, 
-                  min_raise: int, community_cards: List[Card], 
-                  pot_size: int) -> tuple[BettingAction, Optional[int]]:
+    def get_action(
+        self, amount_to_call: int, current_bet: int,
+        min_raise: int, community_cards: List[Card],
+        pot_size: int
+    ) -> tuple[BettingAction, Optional[int]]:
         """
         Get action from AI player.
         This will be implemented in the ai.py module.
         """
         # This will be implemented by the AI module
         pass
-

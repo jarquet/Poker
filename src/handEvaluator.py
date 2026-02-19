@@ -71,11 +71,15 @@ class HandEvaluator:
 
         # Four of a Kind
         if sorted_ranks[0][1] == 4:
-            return HandRank.FOUR_OF_A_KIND, [sorted_ranks[0][0], sorted_ranks[1][0]]
+            return HandRank.FOUR_OF_A_KIND, [
+                sorted_ranks[0][0], sorted_ranks[1][0]
+            ]
 
         # Full House
         if sorted_ranks[0][1] == 3 and sorted_ranks[1][1] == 2:
-            return HandRank.FULL_HOUSE, [sorted_ranks[0][0], sorted_ranks[1][0]]
+            return HandRank.FULL_HOUSE, [
+                sorted_ranks[0][0], sorted_ranks[1][0]
+            ]
 
         # Flush
         if is_flush:
@@ -95,7 +99,9 @@ class HandEvaluator:
 
         # Two Pair
         if sorted_ranks[0][1] == 2 and sorted_ranks[1][1] == 2:
-            pairs = sorted([sorted_ranks[0][0], sorted_ranks[1][0]], reverse=True)
+            pairs = sorted(
+                [sorted_ranks[0][0], sorted_ranks[1][0]], reverse=True
+            )
             kicker = sorted_ranks[2][0]
             return HandRank.TWO_PAIR, pairs + [kicker]
 
@@ -112,16 +118,16 @@ class HandEvaluator:
     def _is_straight(ranks: List[int]) -> bool:
         """Check if ranks form a straight"""
         unique_ranks = sorted(set(ranks))
-        
+
         # Check for regular straight
         if len(unique_ranks) == 5:
             if unique_ranks[-1] - unique_ranks[0] == 4:
                 return True
-        
+
         # Check for A-2-3-4-5 straight (wheel)
         if set(unique_ranks) == {14, 2, 3, 4, 5}:
             return True
-        
+
         return False
 
     @staticmethod
@@ -162,4 +168,3 @@ class HandEvaluator:
             HandRank.ROYAL_FLUSH: "Royal Flush"
         }
         return names[rank]
-

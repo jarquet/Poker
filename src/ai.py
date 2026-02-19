@@ -14,9 +14,11 @@ class AIPlayer:
         self.player = player_instance
         self.difficulty = difficulty
 
-    def get_action(self, amount_to_call: int, current_bet: int, 
-                  min_raise: int, community_cards: List[Card], 
-                  pot_size: int) -> tuple[BettingAction, Optional[int]]:
+    def get_action(
+        self, amount_to_call: int, current_bet: int,
+        min_raise: int, community_cards: List[Card],
+        pot_size: int
+    ) -> tuple[BettingAction, Optional[int]]:
         """
         Determine AI action based on hand strength and game state.
         Returns: (BettingAction, raise_amount or None)
@@ -34,11 +36,18 @@ class AIPlayer:
 
         # Make decision based on difficulty and hand strength
         if self.difficulty == "easy":
-            return self._easy_strategy(hand_strength, amount_to_call, current_bet, min_raise)
+            return self._easy_strategy(
+                hand_strength, amount_to_call, current_bet, min_raise
+            )
         elif self.difficulty == "medium":
-            return self._medium_strategy(hand_strength, amount_to_call, pot_odds, current_bet, min_raise)
+            return self._medium_strategy(
+                hand_strength, amount_to_call, pot_odds, current_bet, min_raise
+            )
         else:  # hard
-            return self._hard_strategy(hand_strength, amount_to_call, pot_odds, current_bet, min_raise, pot_size)
+            return self._hard_strategy(
+                hand_strength, amount_to_call, pot_odds,
+                current_bet, min_raise, pot_size
+            )
 
     def _evaluate_preflop_hand(self) -> float:
         """Evaluate hand strength pre-flop (0.0 to 1.0)"""
@@ -92,7 +101,7 @@ class AIPlayer:
             return self._evaluate_preflop_hand()
 
         rank, _ = HandEvaluator.evaluate_hand(cards)
-        
+
         # Convert hand rank to strength (0.0 to 1.0)
         strength_map = {
             HandRank.HIGH_CARD: 0.1,
@@ -106,9 +115,9 @@ class AIPlayer:
             HandRank.STRAIGHT_FLUSH: 0.98,
             HandRank.ROYAL_FLUSH: 1.0
         }
-        
+
         base_strength = strength_map.get(rank, 0.1)
-        
+
         # Add some randomness for realism
         return min(1.0, base_strength + random.uniform(-0.05, 0.05))
 
@@ -120,8 +129,10 @@ class AIPlayer:
             return 0.0
         return pot_size / amount_to_call
 
-    def _easy_strategy(self, hand_strength: float, amount_to_call: int, 
-                      current_bet: int, min_raise: int) -> tuple[BettingAction, Optional[int]]:
+    def _easy_strategy(
+        self, hand_strength: float, amount_to_call: int,
+        current_bet: int, min_raise: int
+    ) -> tuple[BettingAction, Optional[int]]:
         """Easy AI strategy - very conservative"""
         if hand_strength < 0.4:
             if amount_to_call == 0:
@@ -136,16 +147,22 @@ class AIPlayer:
         else:
             if amount_to_call == 0:
                 if hand_strength > 0.7 and random.random() < 0.3:
-                    raise_amount = min(min_raise, int(self.player.chips * 0.2))
+                    raise_amount = min(
+                        min_raise, int(self.player.chips * 0.2)
+                    )
                     return BettingAction.RAISE, raise_amount
                 return BettingAction.CHECK, None
             if hand_strength > 0.8 and random.random() < 0.4:
-                raise_amount = min(min_raise * 2, int(self.player.chips * 0.3))
+                raise_amount = min(
+                    min_raise * 2, int(self.player.chips * 0.3)
+                )
                 return BettingAction.RAISE, raise_amount
             return BettingAction.CALL, None
 
-    def _medium_strategy(self, hand_strength: float, amount_to_call: int, 
-                        pot_odds: float, current_bet: int, min_raise: int) -> tuple[BettingAction, Optional[int]]:
+    def _medium_strategy(
+        self, hand_strength: float, amount_to_call: int,
+        pot_odds: float, current_bet: int, min_raise: int
+    ) -> tuple[BettingAction, Optional[int]]:
         """Medium AI strategy - balanced"""
         if hand_strength < 0.3:
             if amount_to_call == 0:
@@ -157,7 +174,9 @@ class AIPlayer:
         elif hand_strength < 0.5:
             if amount_to_call == 0:
                 if random.random() < 0.2:  # Occasional bluff
-                    raise_amount = min(min_raise, int(self.player.chips * 0.15))
+                    raise_amount = min(
+                        min_raise, int(self.player.chips * 0.15)
+                    )
                     return BettingAction.RAISE, raise_amount
                 return BettingAction.CHECK, None
             if pot_odds > 4:
@@ -168,36 +187,48 @@ class AIPlayer:
         elif hand_strength < 0.7:
             if amount_to_call == 0:
                 if random.random() < 0.4:
-                    raise_amount = min(min_raise, int(self.player.chips * 0.25))
+                    raise_amount = min(
+                        min_raise, int(self.player.chips * 0.25)
+                    )
                     return BettingAction.RAISE, raise_amount
                 return BettingAction.CHECK, None
             if hand_strength > 0.6 and random.random() < 0.3:
-                raise_amount = min(min_raise * 2, int(self.player.chips * 0.3))
+                raise_amount = min(
+                    min_raise * 2, int(self.player.chips * 0.3)
+                )
                 return BettingAction.RAISE, raise_amount
             return BettingAction.CALL, None
         else:  # Strong hand
             if amount_to_call == 0:
                 if random.random() < 0.6:
-                    raise_amount = min(min_raise * 2, int(self.player.chips * 0.4))
+                    raise_amount = min(
+                        min_raise * 2, int(self.player.chips * 0.4)
+                    )
                     return BettingAction.RAISE, raise_amount
                 return BettingAction.CHECK, None
             if random.random() < 0.5:
-                raise_amount = min(min_raise * 2, int(self.player.chips * 0.5))
+                raise_amount = min(
+                    min_raise * 2, int(self.player.chips * 0.5)
+                )
                 return BettingAction.RAISE, raise_amount
             return BettingAction.CALL, None
 
-    def _hard_strategy(self, hand_strength: float, amount_to_call: int, 
-                     pot_odds: float, current_bet: int, min_raise: int,
-                     pot_size: int) -> tuple[BettingAction, Optional[int]]:
+    def _hard_strategy(
+        self, hand_strength: float, amount_to_call: int,
+        pot_odds: float, current_bet: int, min_raise: int,
+        pot_size: int
+    ) -> tuple[BettingAction, Optional[int]]:
         """Hard AI strategy - more aggressive and strategic"""
         # More sophisticated pot odds and implied odds consideration
         effective_odds = pot_odds if pot_odds != float('inf') else 10
-        
+
         if hand_strength < 0.25:
             if amount_to_call == 0:
                 # Bluff occasionally
                 if random.random() < 0.15:
-                    raise_amount = min(min_raise, int(self.player.chips * 0.2))
+                    raise_amount = min(
+                        min_raise, int(self.player.chips * 0.2)
+                    )
                     return BettingAction.RAISE, raise_amount
                 return BettingAction.CHECK, None
             if effective_odds < 2 or amount_to_call > self.player.chips * 0.2:
@@ -206,7 +237,9 @@ class AIPlayer:
         elif hand_strength < 0.5:
             if amount_to_call == 0:
                 if random.random() < 0.3:
-                    raise_amount = min(min_raise, int(self.player.chips * 0.2))
+                    raise_amount = min(
+                        min_raise, int(self.player.chips * 0.2)
+                    )
                     return BettingAction.RAISE, raise_amount
                 return BettingAction.CHECK, None
             if effective_odds > 3:
@@ -217,21 +250,28 @@ class AIPlayer:
         elif hand_strength < 0.7:
             if amount_to_call == 0:
                 if random.random() < 0.5:
-                    raise_amount = min(min_raise * 2, int(self.player.chips * 0.3))
+                    raise_amount = min(
+                        min_raise * 2, int(self.player.chips * 0.3)
+                    )
                     return BettingAction.RAISE, raise_amount
                 return BettingAction.CHECK, None
             if hand_strength > 0.6 and random.random() < 0.4:
-                raise_amount = min(min_raise * 2, int(self.player.chips * 0.35))
+                raise_amount = min(
+                    min_raise * 2, int(self.player.chips * 0.35)
+                )
                 return BettingAction.RAISE, raise_amount
             return BettingAction.CALL, None
         else:  # Very strong hand
             if amount_to_call == 0:
                 if random.random() < 0.7:
-                    raise_amount = min(min_raise * 2, int(self.player.chips * 0.5))
+                    raise_amount = min(
+                        min_raise * 2, int(self.player.chips * 0.5)
+                    )
                     return BettingAction.RAISE, raise_amount
                 return BettingAction.CHECK, None
             if random.random() < 0.6:
-                raise_amount = min(min_raise * 3, int(self.player.chips * 0.6))
+                raise_amount = min(
+                    min_raise * 3, int(self.player.chips * 0.6)
+                )
                 return BettingAction.RAISE, raise_amount
             return BettingAction.CALL, None
-
