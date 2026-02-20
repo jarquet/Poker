@@ -143,7 +143,14 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 });
 
+document.getElementById('raise-amount')?.addEventListener('click', (e) => {
+  e.stopPropagation();
+});
+
 document.getElementById('actions').addEventListener('click', async (e) => {
+  if (e.target.id === 'raise-amount' || e.target.closest('#raise-amount')) {
+    return;
+  }
   const btn = e.target.closest('[data-action]');
   if (!btn || btn.disabled) return;
 

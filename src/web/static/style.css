@@ -171,22 +171,25 @@ header h1 {
 .btn-fold { background: #6d4c41; color: white; }
 .btn-check { background: #78909c; color: white; }
 .btn-call { background: var(--blue); color: white; }
-.btn-raise { background: #2e7d32; color: white; }
 .btn-allin { background: var(--red); color: white; }
 .btn-primary { background: var(--gold); color: #1a1a1a; }
 
 .raise-group {
   display: inline-flex;
-  align-items: center;
-  gap: 4px;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
 }
 
 #raise-amount {
-  width: 70px;
-  padding: 2px 6px;
+  width: 80px;
+  padding: 6px 8px;
   border-radius: 4px;
   border: 1px solid rgba(0,0,0,0.2);
+  font-size: 0.95rem;
 }
+
+.btn-raise { background: #6a1b9a; color: white; }
 
 .start-hand {
   text-align: center;
