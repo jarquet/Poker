@@ -14,7 +14,7 @@ COPY src/ ./src/
 # Run from src/ so imports (game, betting, etc.) work
 WORKDIR /app/src
 
-EXPOSE 8000
+EXPOSE 3076
 
 # Bind to 0.0.0.0 so it's reachable from the local network
-CMD ["python", "-m", "uvicorn", "web.app:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["python", "-m", "uvicorn", "web.app:app", "--host", "0.0.0.0", "--port", "3076"]

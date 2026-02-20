@@ -4,4 +4,4 @@ services:
     container_name: poker-web
     restart: unless-stopped
     ports:
-      - "8000:8000"
+      - "3076:3076"

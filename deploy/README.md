@@ -15,7 +15,7 @@ docker compose build
 docker compose up -d
 ```
 
-Open http://\<raspberry-pi-ip\>:8000 from any device on your network.
+Open http://\<raspberry-pi-ip\>:3076 from any device on your network. With nginx HTTPS: https://\<raspberry-pi-ip\>:3077.
 
 ## Systemd Service
 
@@ -68,17 +68,35 @@ sudo systemctl status poker-web
 | `sudo systemctl status poker-web` | Check status |
 | `docker compose logs -f` | View logs (run from project dir) |
 
+## Nginx HTTPS Reverse Proxy
+
+To serve the app over HTTPS on port 3077:
+
+1. Ensure nginx is installed (`sudo apt install nginx` on Debian/Ubuntu).
+2. Deploy the config and create self-signed certs:
+
+```bash
+cd /home/pi/poker
+sudo ./deploy/deploy-nginx.sh
+sudo systemctl reload nginx
+```
+
+Or manually: run `sudo ./deploy/create-ssl-certs.sh`, then copy `deploy/nginx/poker-https.conf` to `/etc/nginx/conf.d/`, and reload nginx.
+
+Access the app at **https://localhost:3077** (or https://\<host-ip\>:3077). Browsers will warn about the self-signed cert; accept to continue.
+
 ## Firewall
 
 If `ufw` is enabled:
 
 ```bash
-sudo ufw allow 8000/tcp
+sudo ufw allow 3076/tcp
+sudo ufw allow 3077/tcp
 sudo ufw reload
 ```
 
 ## Troubleshooting
 
-- **Can't connect from other devices**: Check the Pi's IP with `hostname -I`, ensure port 8000 is open, and that the container is running (`docker ps`).
+- **Can't connect from other devices**: Check the Pi's IP with `hostname -I`, ensure port 3076 is open, and that the container is running (`docker ps`).
 - **Container exits**: Run `docker compose logs` to inspect errors.
 - **Compose not found**: Install the Docker Compose plugin or use `docker-compose` (standalone) and update the service file.

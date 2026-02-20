@@ -35,7 +35,7 @@ chmod +x src/main.py
 
 1. Install dependencies: `pip install -r requirements.txt`
 2. Start the server: `python src/web_main.py`
-3. Open http://localhost:8000 in your browser
+3. Open http://localhost:3076 in your browser
 4. Click "Deal New Hand" to begin
 
 ### Docker (e.g. Raspberry Pi)
@@ -44,7 +44,7 @@ chmod +x src/main.py
 docker compose up -d
 ```
 
-Then open http://localhost:8000 (or http://\<host-ip\>:8000 from other devices on your network).
+Then open http://localhost:3076 (or http://\<host-ip\>:3076 from other devices on your network). With nginx HTTPS proxy: https://localhost:3077.
 
 For Raspberry Pi with systemd, see [deploy/README.md](deploy/README.md).
 
@@ -92,8 +92,12 @@ Poker/
 │   │   ├── game_session.py
 │   │   └── static/       # HTML, CSS, JS
 ├── deploy/
-│   ├── poker-web.service # systemd unit for Raspberry Pi
-│   └── README.md         # Deployment instructions
+│   ├── nginx/
+│   │   └── poker-https.conf  # nginx HTTPS reverse proxy config
+│   ├── create-ssl-certs.sh   # Generate self-signed certs for nginx
+│   ├── deploy-nginx.sh       # Deploy nginx config and certs
+│   ├── poker-web.service     # systemd unit for Raspberry Pi
+│   └── README.md             # Deployment instructions
 ├── Dockerfile
 ├── docker-compose.yml
 ├── requirements.txt
