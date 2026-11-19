@@ -41,9 +41,9 @@ ENV/
 .DS_Store
 Thumbs.db
 
-# Environment variables
+# Environment variables (incl. .env.local from the Vercel CLI)
 .env
-.env.local
+.env*
 *.local
 
 # Logs
