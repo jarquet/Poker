@@ -2,7 +2,27 @@
  * Texas Hold'em Poker - Web Client
  */
 
-let sessionId = null;
+// Remember the session so a page refresh resumes the same game.
+const SESSION_KEY = 'poker-session-id';
+
+function loadSessionId() {
+  try {
+    return localStorage.getItem(SESSION_KEY);
+  } catch {
+    return null;
+  }
+}
+
+function storeSessionId(id) {
+  try {
+    localStorage.setItem(SESSION_KEY, id);
+  } catch {
+    // Storage unavailable (e.g. private mode): the game still works,
+    // it just won't survive a refresh.
+  }
+}
+
+let sessionId = loadSessionId();
 
 async function apiFetch(path, options = {}) {
   const headers = {
@@ -40,6 +60,7 @@ function renderCards(containerId, cards) {
 
 function updateUI(state) {
   sessionId = state.session_id;
+  storeSessionId(sessionId);
 
   document.getElementById('hand-num').textContent =
     state.hand_number > 0 ? `#${state.hand_number}` : '—';
@@ -66,12 +87,15 @@ function updateUI(state) {
   const actionsEl = document.getElementById('actions');
   const startHandEl = document.getElementById('start-hand');
   const resultEl = document.getElementById('result');
+  const newGameEl = document.getElementById('new-game');
+  newGameEl.classList.add('hidden');
 
   if (state.game_state === 'game_over') {
     actionsEl.classList.add('hidden');
 
     if (state.game_over) {
       startHandEl.classList.add('hidden');
+      newGameEl.classList.remove('hidden');
       resultEl.classList.remove('hidden');
       const hp = state.human_player.chips;
       const ap = state.ai_player.chips;
@@ -92,6 +116,8 @@ function updateUI(state) {
         }
         resultEl.textContent = msg;
         resultEl.classList.add('winner');
+      } else {
+        resultEl.classList.add('hidden');
       }
     }
   } else {
@@ -175,6 +201,18 @@ document.getElementById('actions').addEventListener('click', async (e) => {
       body: JSON.stringify({ action, amount }),
     });
     updateUI(state);
+  } catch (err) {
+    showMessage('Error: ' + err.message);
+  }
+});
+
+document.getElementById('btn-new-game').addEventListener('click', async () => {
+  showMessage('');
+
+  try {
+    const state = await apiFetch('/api/new-game', { method: 'POST' });
+    updateUI(state);
+    showMessage('Click "Deal New Hand" to start');
   } catch (err) {
     showMessage('Error: ' + err.message);
   }

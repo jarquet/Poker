@@ -48,3 +48,6 @@ Thumbs.db
 
 # Logs
 *.log
+
+# Vercel CLI project link
+.vercel/

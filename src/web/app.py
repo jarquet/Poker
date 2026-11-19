@@ -13,7 +13,7 @@ from pydantic import BaseModel
 from game import Game, GameState
 from betting import BettingAction
 from .serializers import serialize_game_state
-from .game_session import get_or_create_session
+from .game_session import get_or_create_session, reset_session, save_session
 
 
 app = FastAPI(title="Texas Hold'em Poker", version="1.0")
@@ -134,6 +134,7 @@ async def get_state(x_session_id: Optional[str] = Header(None, alias="X-Session-
     If it's the AI's turn (e.g. after page refresh), runs AI turns before returning."""
     session_id, session = get_or_create_session(x_session_id)
     _run_ai_turns(session)
+    save_session(session)
     state = serialize_game_state(session.game)
     state["session_id"] = session_id
     return state
@@ -174,6 +175,7 @@ async def submit_action(
 
     # Run AI turns until human's turn or hand over
     _run_ai_turns(session)
+    save_session(session)
 
     state = serialize_game_state(game)
     state["session_id"] = session_id
@@ -199,7 +201,20 @@ async def start_hand(
 
     # If AI is first to act (dealer/small blind pre-flop), run their turn
     _run_ai_turns(session)
+    save_session(session)
 
     state = serialize_game_state(game)
     state["session_id"] = session_id
+    return state
+
+
+@app.post("/api/new-game")
+async def new_game(
+    x_session_id: Optional[str] = Header(None, alias="X-Session-Id"),
+):
+    """Start a new match (fresh chip stacks) under the same session."""
+    _, session = get_or_create_session(x_session_id)
+    session = reset_session(session)
+    state = serialize_game_state(session.game)
+    state["session_id"] = session.session_id
     return state

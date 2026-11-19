@@ -1,6 +1,6 @@
 # 2-Player Texas Hold'em Poker Game
 
-A heads-up Texas Hold'em poker game where you play against an AI opponent. Play in the **terminal** or in a **web browser**, and optionally host the web version on a Raspberry Pi (or any Docker host) for your home network.
+A heads-up Texas Hold'em poker game where you play against an AI opponent. Play in the **terminal** or in a **web browser**, and optionally host the web version on a Raspberry Pi (or any Docker host) for your home network, or on Vercel.
 
 ## Features
 
@@ -12,6 +12,7 @@ A heads-up Texas Hold'em poker game where you play against an AI opponent. Play 
   - **Command line**: no dependencies beyond the Python standard library
   - **Web**: a browser table served by FastAPI
 - Docker and Docker Compose setup, a systemd service for Raspberry Pi, and an optional nginx HTTPS reverse proxy
+- Deployable to Vercel's free tier, with games stored in Upstash Redis
 
 ## Requirements
 
@@ -37,7 +38,7 @@ On Linux or macOS you can also run `./src/main.py` directly.
 3. Open http://localhost:3076 in your browser
 4. Click **Deal New Hand** to begin
 
-`web_main.py` runs Uvicorn with auto-reload, which is handy for development. Games are kept in server memory, so refreshing the page or restarting the server starts a new game.
+`web_main.py` runs Uvicorn with auto-reload, which is handy for development. Refreshing the page picks up the game where you left off. Games are kept in server memory unless Upstash Redis is configured (see [Vercel](#vercel)), so restarting the server starts everyone over.
 
 ### Docker (e.g. Raspberry Pi)
 
@@ -48,6 +49,18 @@ docker compose up -d
 Then open http://localhost:3076, or http://\<host-ip\>:3076 from other devices on your network.
 
 To run it as a systemd service that starts on boot, or to add HTTPS on port 3077 through an nginx reverse proxy on the host, see [deploy/README.md](deploy/README.md).
+
+### Vercel
+
+The web version can run on Vercel's free Hobby plan (personal, non-commercial use). Vercel runs the app on short-lived instances that don't share memory, so games are stored in [Upstash Redis](https://upstash.com/), which also has a free tier.
+
+1. In Vercel, create a new project and import this GitHub repository. No build settings are needed: Vercel finds the FastAPI app through the root-level `app.py` and installs `requirements.txt`.
+2. In the project's **Storage** tab (or the Vercel Marketplace), create an **Upstash Redis** database and connect it to the project. This adds its REST URL and token as environment variables.
+3. Redeploy so the new environment variables take effect.
+
+The app reads `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN`, or `KV_REST_API_URL` and `KV_REST_API_TOKEN` if those are the names you were given. Without them it falls back to memory and logs a warning, and games will reset at random as Vercel switches instances. Idle games are deleted after 7 days.
+
+The same variables work anywhere else, for example to keep games across restarts of the Docker container.
 
 ## Game Rules
 
@@ -91,7 +104,7 @@ Poker/
 │   └── web/
 │       ├── app.py           # FastAPI routes
 │       ├── serializers.py   # Game state → JSON
-│       ├── game_session.py  # In-memory game sessions
+│       ├── game_session.py  # Game sessions (memory or Upstash Redis)
 │       └── static/          # HTML, CSS, JS
 ├── deploy/
 │   ├── nginx/
@@ -100,12 +113,18 @@ Poker/
 │   ├── deploy-nginx.sh       # Deploy nginx config and certs
 │   ├── poker-web.service     # systemd unit for Raspberry Pi
 │   └── README.md             # Deployment instructions
+├── app.py                # Vercel entrypoint (loads src/web/app.py)
 ├── Dockerfile
 ├── docker-compose.yml
 ├── requirements.txt
+├── CHANGELOG.md
 ├── LICENSE
 └── README.md
 ```
+
+## Changelog
+
+See [CHANGELOG.md](CHANGELOG.md) for bug fixes and changes, including the Vercel support.
 
 ## License
 
