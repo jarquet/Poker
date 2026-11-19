@@ -197,7 +197,7 @@ async def start_hand(
 
     game.start_new_hand()
 
-    # If AI is first to act (big blind), run their turn
+    # If AI is first to act (dealer/small blind pre-flop), run their turn
     _run_ai_turns(session)
 
     state = serialize_game_state(game)

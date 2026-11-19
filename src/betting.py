@@ -25,9 +25,13 @@ class BettingRound:
         self.players_acted: List[bool] = [False, False]  # Who has acted
 
     def post_blinds(self, player_stacks: List[int], dealer_index: int):
-        """Post small and big blinds"""
-        small_blind_index = (dealer_index + 1) % 2
-        big_blind_index = (dealer_index + 2) % 2
+        """Post small and big blinds.
+
+        Heads-up rule: the dealer (button) posts the small blind and the
+        other player posts the big blind.
+        """
+        small_blind_index = dealer_index
+        big_blind_index = (dealer_index + 1) % 2
 
         # Post small blind
         sb_amt = min(self.small_blind, player_stacks[small_blind_index])
@@ -48,6 +52,43 @@ class BettingRound:
             self.all_in[small_blind_index] = True
         if player_stacks[big_blind_index] == 0:
             self.all_in[big_blind_index] = True
+
+        # A player who can't cover their blind is all-in for less.
+        refund = self.return_uncalled_bet()
+        if refund:
+            index, amount = refund
+            player_stacks[index] += amount
+            self.all_in[index] = player_stacks[index] == 0
+
+    def return_uncalled_bet(self) -> Optional[Tuple[int, int]]:
+        """Close the round when an all-in player can't match the other bet.
+
+        If a player is all-in for no more than the other player has put in
+        (a short blind, or a call or all-in for less than the bet), nobody
+        has anything left to decide. The part of the other player's bet
+        that can't be matched is uncalled and goes back to them, and the
+        round is over. If the all-in player put in more (e.g. a big blind
+        all-in for 15 against a small blind of 10), the other player still
+        decides to call or fold as usual.
+
+        Returns (player_index, amount) for the caller to add back to that
+        player's stack, or None if nothing changed.
+        """
+        for short_index in (0, 1):
+            other_index = 1 - short_index
+            short_amount = self.player_contributions[short_index]
+            if (self.all_in[short_index] and not self.folded[other_index] and
+                    short_amount <= self.player_contributions[other_index]):
+                excess = self.player_contributions[other_index] - short_amount
+                self.player_contributions[other_index] -= excess
+                self.player_bets[other_index] = max(
+                    0, self.player_bets[other_index] - excess
+                )
+                self.pot -= excess
+                self.current_bet = short_amount
+                self.round_complete = True
+                return other_index, excess
+        return None
 
     def make_action(
         self, player_index: int, action: BettingAction,

@@ -237,11 +237,11 @@ class CLI:
                 current_bet = betting_round.current_bet
 
                 # Determine who acts:
-                # If neither has acted, first to act (after dealer) goes
+                # If neither has acted, the first to act this street goes
                 # If one has acted, the other goes
                 # Both acted, contributions match - round complete
                 if not human_acted and not ai_acted:
-                    # Neither has acted - first to act is player after dealer
+                    # Neither has acted - dealer pre-flop, big blind after
                     active_index = self.game.get_active_player_index()
                 elif not human_acted:
                     # Human hasn't acted

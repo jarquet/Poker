@@ -65,6 +65,14 @@ class Game:
         self.current_betting_round.post_blinds(stacks, self.dealer_index)
         self.players[0].chips = stacks[0]
         self.players[1].chips = stacks[1]
+        for player, all_in in zip(self.players,
+                                  self.current_betting_round.all_in):
+            player.all_in = all_in
+
+        # A blind left someone all-in with nothing left to decide:
+        # deal the rest of the board and go straight to showdown.
+        if self.current_betting_round.round_complete:
+            self._advance_game_state()
 
     def deal_flop(self):
         """Deal the flop (3 community cards)"""
@@ -166,6 +174,16 @@ class Game:
                 player.all_in = True
             else:
                 player.all_in = False
+
+            # An all-in for less than the bet: return the unmatched part
+            # of the other player's bet and close the round.
+            refund = self.current_betting_round.return_uncalled_bet()
+            if refund:
+                index, amount = refund
+                self.players[index].chips += amount
+                still_all_in = self.players[index].chips == 0
+                self.players[index].all_in = still_all_in
+                self.current_betting_round.all_in[index] = still_all_in
 
             # Check if betting round is complete
             if self.current_betting_round.round_complete:
@@ -367,11 +385,10 @@ class Game:
         if self.current_betting_round is None:
             return 0
 
-        # In pre-flop, small blind acts first (after big blind)
-        # In other rounds, player after dealer acts first
+        # Heads-up rules: the dealer posts the small blind and acts first
+        # pre-flop; after the flop, the big blind (non-dealer) acts first
+        # and the dealer acts last.
         if self.state == GameState.PRE_FLOP:
-            # Big blind has already acted, small blind acts first
-            return (self.dealer_index + 1) % 2
+            return self.dealer_index
         else:
-            # Player after dealer acts first
             return (self.dealer_index + 1) % 2
