@@ -2,7 +2,7 @@
 
 A heads-up Texas Hold'em poker game where you play against an AI opponent. Play in the **terminal** or in a **web browser**, and optionally host the web version on a Raspberry Pi (or any Docker host) for your home network, or on Vercel.
 
-**Play it online:** https://poker-five-umber.vercel.app
+**Play it online:** https://poker.jarquet.net
 
 ## Features
 
