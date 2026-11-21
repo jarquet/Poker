@@ -4,6 +4,15 @@ Notable changes to this project, newest first.
 
 ## 2026-11-19
 
+### Performance
+
+Server time spent on storage in each request went from about 135 ms to about 1–6 ms when the request reaches a running instance. Measured on Vercel with the new `Server-Timing` header:
+
+- **The app runs next to the database.** `vercel.json` moves it from Washington, D.C. (`iad1`, Vercel's default) to Portland (`pdx1`), beside the Upstash database in Oregon. Each storage call went from about 58 ms to about 1 ms.
+- **Connections to Redis are reused.** A shared pool of kept-alive HTTPS connections replaces a new connection per call, which cost extra round trips each time.
+- **Fewer storage calls.** Loading a game that hasn't changed no longer saves it back, a new game is saved once instead of twice, and Play Again doesn't load the old game first. A reload is 1 call; a move is 2.
+- **API handlers run in a thread pool**, so one request's storage calls don't hold up other requests on the same instance. Memory mode now stores copies of games too, so simultaneous requests for one game (like a double-click) can't corrupt it.
+
 ### Fixed
 
 - **Blind order now follows heads-up rules.** The dealer posts the small blind and acts first before the flop. From the flop on, the big blind acts first and the dealer acts last. Previously the non-dealer posted the small blind and acted first on every street.

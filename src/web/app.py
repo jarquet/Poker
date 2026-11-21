@@ -2,10 +2,11 @@
 FastAPI web application for Texas Hold'em poker.
 """
 
+import time
 from pathlib import Path
 from typing import Optional
 
-from fastapi import FastAPI, HTTPException, Header
+from fastapi import FastAPI, HTTPException, Header, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
@@ -13,10 +14,38 @@ from pydantic import BaseModel
 from game import Game, GameState
 from betting import BettingAction
 from .serializers import serialize_game_state
-from .game_session import get_or_create_session, reset_session, save_session
+from .game_session import (
+    load_or_new_session, new_match, save_session, store_new_connections,
+    store_timings,
+)
 
 
 app = FastAPI(title="Texas Hold'em Poker", version="1.0")
+
+
+@app.middleware("http")
+async def add_server_timing(request: Request, call_next):
+    """Report time spent in the app and in session storage.
+
+    Browsers show the Server-Timing header in their developer tools.
+    """
+    timings, new_connections = [], []
+    tokens = (store_timings.set(timings),
+              store_new_connections.set(new_connections))
+    start = time.perf_counter()
+    try:
+        response = await call_next(request)
+    finally:
+        store_timings.reset(tokens[0])
+        store_new_connections.reset(tokens[1])
+    total_ms = (time.perf_counter() - start) * 1000
+    store_ms = sum(timings)
+    response.headers["Server-Timing"] = (
+        f'app;dur={total_ms:.1f}, '
+        f'store;dur={store_ms:.1f};desc="{len(timings)} storage calls, '
+        f'{len(new_connections)} new connections"'
+    )
+    return response
 
 # Serve static files from web/static
 STATIC_DIR = Path(__file__).parent / "static"
@@ -63,10 +92,14 @@ def _get_active_player_index(game: Game) -> Optional[int]:
     return None
 
 
-def _run_ai_turns(session) -> None:
-    """Run all AI turns until it's human's turn or hand is over."""
+def _run_ai_turns(session) -> int:
+    """Run all AI turns until it's human's turn or hand is over.
+
+    Returns how many actions the AI took.
+    """
     game = session.game
     ai_logic = session.ai_logic
+    actions = 0
 
     while game.state != GameState.GAME_OVER:
         active_index = _get_active_player_index(game)
@@ -103,6 +136,9 @@ def _run_ai_turns(session) -> None:
         success, _ = game.process_betting_action(1, action, amount)
         if not success:
             break
+        actions += 1
+
+    return actions
 
 
 def _parse_action(action_str: str) -> BettingAction:
@@ -128,25 +164,30 @@ async def root():
     return {"message": "Texas Hold'em Poker API", "docs": "/docs"}
 
 
+# The API handlers are plain `def` functions, so FastAPI runs them in a
+# thread pool: their blocking session-storage calls don't hold up other
+# requests being served by the same instance.
+
 @app.get("/api/state")
-async def get_state(x_session_id: Optional[str] = Header(None, alias="X-Session-Id")):
+def get_state(x_session_id: Optional[str] = Header(None, alias="X-Session-Id")):
     """Get current game state. Creates new session if none exists.
     If it's the AI's turn (e.g. after page refresh), runs AI turns before returning."""
-    session_id, session = get_or_create_session(x_session_id)
-    _run_ai_turns(session)
-    save_session(session)
+    session, is_new = load_or_new_session(x_session_id)
+    if _run_ai_turns(session) or is_new:
+        save_session(session)
     state = serialize_game_state(session.game)
-    state["session_id"] = session_id
+    state["session_id"] = session.session_id
     return state
 
 
 @app.post("/api/action")
-async def submit_action(
+def submit_action(
     req: ActionRequest,
     x_session_id: Optional[str] = Header(None, alias="X-Session-Id"),
 ):
     """Submit a betting action. AI will act automatically if it's their turn after."""
-    session_id, session = get_or_create_session(x_session_id)
+    session, _ = load_or_new_session(x_session_id)
+    session_id = session.session_id
     game = session.game
 
     if game.state == GameState.GAME_OVER:
@@ -183,11 +224,12 @@ async def submit_action(
 
 
 @app.post("/api/start-hand")
-async def start_hand(
+def start_hand(
     x_session_id: Optional[str] = Header(None, alias="X-Session-Id"),
 ):
     """Start a new hand. Requires game to be in GAME_OVER state."""
-    session_id, session = get_or_create_session(x_session_id)
+    session, _ = load_or_new_session(x_session_id)
+    session_id = session.session_id
     game = session.game
 
     if game.is_game_over():
@@ -209,12 +251,11 @@ async def start_hand(
 
 
 @app.post("/api/new-game")
-async def new_game(
+def new_game(
     x_session_id: Optional[str] = Header(None, alias="X-Session-Id"),
 ):
     """Start a new match (fresh chip stacks) under the same session."""
-    _, session = get_or_create_session(x_session_id)
-    session = reset_session(session)
+    session = new_match(x_session_id)
     state = serialize_game_state(session.game)
     state["session_id"] = session.session_id
     return state

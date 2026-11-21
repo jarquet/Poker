@@ -60,6 +60,8 @@ The web version can run on Vercel's free Hobby plan (personal, non-commercial us
 2. In the project's **Storage** tab (or the Vercel Marketplace), create an **Upstash Redis** database and connect it to the project. This adds its REST URL and token as environment variables.
 3. Redeploy so the new environment variables take effect.
 
+**Keep the app next to the database.** Every move reads and writes the game in Redis, so the app should run in the same region as the database. [vercel.json](vercel.json) pins it to Portland (`pdx1`), next to an Upstash database in Oregon (`us-west-2`). If your database is elsewhere, change the region to match: from Washington, D.C. (Vercel's default) to Oregon, each storage call took about 58 ms instead of about 1 ms. Each API response includes a `Server-Timing` header (visible in the browser's developer tools) showing time spent in the app and in storage.
+
 The app reads `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN`, or `KV_REST_API_URL` and `KV_REST_API_TOKEN` if those are the names you were given. Without them it falls back to memory and logs a warning, and games will reset at random as Vercel switches instances. Idle games are deleted after 7 days.
 
 The same variables work anywhere else, for example to keep games across restarts of the Docker container.
@@ -116,6 +118,7 @@ Poker/
 │   ├── poker-web.service     # systemd unit for Raspberry Pi
 │   └── README.md             # Deployment instructions
 ├── app.py                # Vercel entrypoint (loads src/web/app.py)
+├── vercel.json           # Vercel region (next to the Redis database)
 ├── Dockerfile
 ├── docker-compose.yml
 ├── requirements.txt
